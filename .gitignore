@@ -24,3 +24,7 @@ Thumbs.db
 
 # Large generated files
 outputs/metrics/*.tmp
+
+# Dataset files
+data/raw/*.csv
+data/processed/*.csv

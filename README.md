@@ -39,3 +39,19 @@ https://www.kaggle.com/datasets/naserabdullahalam/phishing-email-dataset
 - FastAPI
 - Tkinter
 - Explainable AI
+
+## Dataset Setup
+
+This project uses the Kaggle Phishing Email Dataset:
+
+https://www.kaggle.com/datasets/naserabdullahalam/phishing-email-dataset
+
+Download the dataset and place:
+
+`phishing_email.csv`
+
+inside:
+
+`data/raw/`
+
+The raw dataset is excluded from Git version control because of its size.
