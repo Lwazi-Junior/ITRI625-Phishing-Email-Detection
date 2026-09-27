@@ -1,0 +1,14 @@
+numpy
+pandas
+scikit-learn
+joblib
+tensorflow
+matplotlib
+jupyter
+ipykernel
+fastapi
+uvicorn
+pydantic
+requests
+lime
+python-multipart
