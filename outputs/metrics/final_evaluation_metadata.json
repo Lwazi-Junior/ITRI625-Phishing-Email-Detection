@@ -1,0 +1,21 @@
+{
+    "model": "PhishGuard_1D_CNN",
+    "test_samples": 12312,
+    "classification_threshold": 0.54,
+    "threshold_selected_using": "validation",
+    "threshold_selection_metric": "F1-score",
+    "test_set_used_for_tuning": false,
+    "final_accuracy": 0.9899285250162443,
+    "final_precision": 0.9865678554886521,
+    "final_recall": 0.9942430371868679,
+    "final_f1": 0.9903905765654061,
+    "final_roc_auc": 0.9994678619920554,
+    "final_pr_auc": 0.9994861776457842,
+    "final_log_loss": 0.033087994903326035,
+    "false_positive_rate": 0.014783347493627868,
+    "false_negative_rate": 0.005756962813132099,
+    "true_negatives": 5798,
+    "false_positives": 87,
+    "false_negatives": 37,
+    "true_positives": 6390
+}
