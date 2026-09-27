@@ -1,0 +1,9 @@
+{
+    "model": "PhishGuard_1D_CNN",
+    "selected_threshold": 0.54,
+    "threshold_selection_dataset": "validation",
+    "threshold_selection_metric": "F1-score",
+    "random_seed": 42,
+    "best_training_epoch": 3,
+    "test_set_used": false
+}
