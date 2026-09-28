@@ -55,3 +55,38 @@ inside:
 `data/raw/`
 
 The raw dataset is excluded from Git version control because of its size.
+
+## FastAPI Prediction Service
+
+The trained 1D CNN model is exposed through a FastAPI service.
+
+### Start the API
+
+From the project root:
+
+```powershell
+python -m uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+### Available endpoints
+
+- `GET /` — service status
+- `GET /health` — model health check
+- `GET /model-info` — model configuration
+- `POST /predict` — phishing email prediction
+
+### Interactive API Documentation
+
+After starting the API, open:
+
+http://127.0.0.1:8000/docs
+
+### Example Prediction Request
+
+```json
+{
+  "email_text": "URGENT: Verify your account immediately."
+}
+```
+
+The API returns the predicted class, phishing probability, confidence, risk level and frozen classification threshold.
