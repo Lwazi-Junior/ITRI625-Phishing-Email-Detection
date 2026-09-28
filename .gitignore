@@ -28,3 +28,10 @@ outputs/metrics/*.tmp
 # Dataset files
 data/raw/*.csv
 data/processed/*.csv
+
+# Temporary development helper scripts
+_add_*.py
+_fix_*.py
+_step*_test.py
+_step*_notebook.py
+_step*_markdown.py
