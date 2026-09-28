@@ -126,3 +126,26 @@ python desktop_app/app.py
 
 The desktop interface communicates with the `/predict` API endpoint and
 does not load or retrain the machine learning model directly.
+
+## Explainable AI
+
+The system includes local prediction explanations using LIME
+(Local Interpretable Model-agnostic Explanations).
+
+### API Endpoint
+
+`POST /explain`
+
+The endpoint returns influential words or phrases and their local
+contribution toward the phishing or legitimate class.
+
+### Desktop Integration
+
+After analysing an email, select:
+
+`EXPLAIN PREDICTION`
+
+to open a LIME explanation window.
+
+LIME explanations are local approximations and should not be interpreted
+as causal explanations of model behaviour.

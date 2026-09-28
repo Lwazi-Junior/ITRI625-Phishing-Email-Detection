@@ -13,6 +13,7 @@ if sys.platform == "win32":
             pass
 
 import tkinter as tk
+from tkinter import messagebox
 
 import requests
 
@@ -23,7 +24,9 @@ import requests
 API_BASE_URL = "http://127.0.0.1:8000"
 HEALTH_URL = f"{API_BASE_URL}/health"
 PREDICT_URL = f"{API_BASE_URL}/predict"
+EXPLAIN_URL = f"{API_BASE_URL}/explain"
 REQUEST_TIMEOUT = 30
+EXPLAIN_TIMEOUT = 180
 
 PHISHING_EXAMPLE = (
     "URGENT: Your account has been locked. Verify your "
@@ -68,6 +71,10 @@ class PhishGuardApp(tk.Tk):
         self.api_online = False
         self.analysis_in_progress = False
         self.last_error = ""
+        self.last_email_text = None
+        self.last_prediction_result = None
+        self.explanation_in_progress = False
+        self.explanation_window = None
         self.ui_queue = queue.Queue()
 
         self._build_layout()
@@ -259,7 +266,16 @@ class PhishGuardApp(tk.Tk):
             font=("Segoe UI", 10),
             wraplength=380,
             justify="left"
-        ).pack(anchor="w", padx=16, pady=(16, 12))
+        ).pack(anchor="w", padx=16, pady=(16, 8))
+
+        self.explain_button = self._button(
+            result_card,
+            "EXPLAIN PREDICTION",
+            self.start_explanation,
+            bg="#334155"
+        )
+        self.explain_button.pack(fill="x", padx=16, pady=(8, 16))
+        self.explain_button.configure(state="disabled")
 
     def _button(self, parent, text, command, bg=BUTTON):
         return tk.Button(
@@ -287,6 +303,12 @@ class PhishGuardApp(tk.Tk):
         self._set_email_text("")
         self._reset_result("Waiting for analysis")
         self.message_var.set("")
+        self.last_email_text = None
+        self.last_prediction_result = None
+        self.explain_button.configure(
+            state="disabled",
+            text="EXPLAIN PREDICTION"
+        )
 
     def _set_email_text(self, text):
         self.email_box.delete("1.0", "end")
@@ -339,6 +361,7 @@ class PhishGuardApp(tk.Tk):
 
         self.analysis_in_progress = True
         self.analyse_button.configure(state="disabled")
+        self.explain_button.configure(state="disabled")
         self.prediction_var.set("Analysing...")
         self.prediction_label.configure(fg=ACCENT)
         self.message_var.set("")
@@ -409,6 +432,15 @@ class PhishGuardApp(tk.Tk):
         self._update_meter(phishing_probability)
         self.message_var.set("")
         self.last_error = ""
+        self.last_prediction_result = payload
+        self.last_email_text = self.email_box.get(
+            "1.0",
+            "end"
+        ).strip()
+        self.explain_button.configure(
+            state="normal",
+            text="EXPLAIN PREDICTION"
+        )
         self._finish_analysis()
 
     def _show_error(self, message):
@@ -447,6 +479,162 @@ class PhishGuardApp(tk.Tk):
         )
         self.meter.itemconfigure(self.meter_fill, fill=colour)
         self.meter_text.set(f"{probability * 100:.4f}%")
+
+    def start_explanation(self):
+        if not self.last_email_text:
+            messagebox.showwarning(
+                "Prediction Required",
+                "Analyse an email before requesting "
+                "an explanation."
+            )
+            return
+
+        if self.explanation_in_progress:
+            return
+
+        self.explanation_in_progress = True
+        self.explain_button.configure(state="disabled")
+        self.explain_button.configure(
+            text="GENERATING EXPLANATION..."
+        )
+        threading.Thread(
+            target=self._explanation_worker,
+            daemon=True
+        ).start()
+
+    def _explanation_worker(self):
+        try:
+            response = requests.post(
+                EXPLAIN_URL,
+                json={
+                    "email_text": self.last_email_text,
+                    "num_features": 8,
+                    "num_samples": 1000
+                },
+                timeout=EXPLAIN_TIMEOUT
+            )
+            response.raise_for_status()
+            explanation = response.json()
+            self._post_to_ui(
+                lambda: self._show_explanation_window(explanation)
+            )
+        except requests.RequestException:
+            self._post_to_ui(
+                lambda: self._explanation_failed(
+                    "Could not reach the PhishGuard API. "
+                    "Start the FastAPI service, then try again."
+                )
+            )
+
+    def _explanation_failed(self, message):
+        self.explanation_in_progress = False
+        if self.last_email_text:
+            self.explain_button.configure(state="normal")
+        self.explain_button.configure(text="EXPLAIN PREDICTION")
+        messagebox.showerror("Explanation Error", message)
+
+    def _show_explanation_window(self, explanation):
+        self.explanation_in_progress = False
+        self.explain_button.configure(
+            state="normal",
+            text="EXPLAIN PREDICTION"
+        )
+
+        popup = tk.Toplevel(self)
+        popup.title("PhishGuard AI - LIME Explanation")
+        popup.geometry("780x560")
+        popup.minsize(700, 500)
+        popup.configure(bg=BG)
+        self.explanation_window = popup
+
+        container = tk.Frame(popup, bg=CARD)
+        container.pack(fill="both", expand=True, padx=15, pady=15)
+
+        tk.Label(
+            container,
+            text="Explainable AI — LIME",
+            bg=CARD,
+            fg=TEXT,
+            font=("Segoe UI", 16, "bold")
+        ).pack(anchor="w", padx=20, pady=(16, 4))
+
+        tk.Label(
+            container,
+            text=(
+                "Local approximation of this prediction. "
+                "Positive weights support phishing. "
+                "Negative weights support legitimate. "
+                "This is not causal proof."
+            ),
+            bg=CARD,
+            fg=MUTED,
+            font=("Segoe UI", 10),
+            wraplength=700,
+            justify="left"
+        ).pack(anchor="w", padx=20, pady=(0, 12))
+
+        probability = float(explanation["phishing_probability"])
+        tk.Label(
+            container,
+            text=(
+                f"Prediction: {explanation['prediction']}"
+                f"    Phishing probability: {probability * 100:.4f}%"
+                f"    Method: {explanation['method']}"
+            ),
+            bg=CARD,
+            fg=TEXT,
+            font=("Segoe UI", 11, "bold")
+        ).pack(anchor="w", padx=20, pady=(0, 12))
+
+        header = tk.Frame(container, bg=CARD)
+        header.pack(fill="x", padx=20)
+        for title, width in (
+            ("Feature / Phrase", 36),
+            ("Weight", 14),
+            ("Influence", 24)
+        ):
+            tk.Label(
+                header,
+                text=title,
+                bg=CARD,
+                fg=MUTED,
+                font=("Segoe UI", 10, "bold"),
+                width=width,
+                anchor="w"
+            ).pack(side="left")
+
+        for row in explanation["features"]:
+            line = tk.Frame(container, bg=CARD)
+            line.pack(fill="x", padx=20, pady=2)
+            weight = float(row["weight"])
+            colour = PHISHING if weight > 0 else LEGITIMATE
+            tk.Label(
+                line,
+                text=row["feature"],
+                bg=CARD,
+                fg=TEXT,
+                font=("Segoe UI", 11),
+                width=36,
+                anchor="w"
+            ).pack(side="left")
+            tk.Label(
+                line,
+                text=f"{weight:+.4f}",
+                bg=CARD,
+                fg=colour,
+                font=("Segoe UI", 11, "bold"),
+                width=14,
+                anchor="w"
+            ).pack(side="left")
+            tk.Label(
+                line,
+                text=row["direction"],
+                bg=CARD,
+                fg=colour,
+                font=("Segoe UI", 11),
+                width=24,
+                anchor="w"
+            ).pack(side="left")
 
 
 def main():

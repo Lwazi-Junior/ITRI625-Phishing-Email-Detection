@@ -42,6 +42,50 @@ class PredictionResponse(BaseModel):
     threshold: float
 
 
+class ExplanationRequest(BaseModel):
+    email_text: str = Field(
+        ...,
+        min_length=1,
+        max_length=200000,
+        description=(
+            "Raw email text to explain."
+        )
+    )
+    num_features: int = Field(
+        default=8,
+        ge=3,
+        le=15
+    )
+    num_samples: int = Field(
+        default=1000,
+        ge=100,
+        le=3000
+    )
+
+
+class ExplanationFeature(BaseModel):
+    feature: str
+    weight: float
+    absolute_weight: float
+    direction: str
+
+
+class ExplanationResponse(BaseModel):
+    model: str
+    prediction: str
+    predicted_class: int
+    phishing_probability: float
+    legitimate_probability: float
+    confidence: float
+    risk_level: str
+    threshold: float
+    method: str
+    target_class: str
+    num_features: int
+    num_samples: int
+    features: list[ExplanationFeature]
+
+
 @app.get("/")
 def root():
     return {
@@ -77,3 +121,29 @@ def predict_email(request: EmailRequest):
             status_code=500,
             detail="Prediction failed."
         ) from exc
+
+
+@app.post(
+    "/explain",
+    response_model=ExplanationResponse
+)
+def explain_email(request: ExplanationRequest):
+    try:
+        return predictor.explain(
+            email_text=request.email_text,
+            num_features=request.num_features,
+            num_samples=request.num_samples
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        ) from error
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Explanation failed: "
+                f"{str(error)}"
+            )
+        ) from error

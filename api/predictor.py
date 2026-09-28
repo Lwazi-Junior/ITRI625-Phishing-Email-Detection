@@ -1,8 +1,10 @@
-from pathlib import Path
 import json
+from pathlib import Path
 
+import numpy as np
 import tensorflow as tf
 from tensorflow import keras
+from lime.lime_text import LimeTextExplainer
 
 
 # ---------------------------------------------------------
@@ -55,6 +57,13 @@ class PhishingPredictor:
         self.model_name = self.config["model"]
         self.threshold = float(self.config["selected_threshold"])
         self.model_loaded = True
+        self.explainer = LimeTextExplainer(
+            class_names=[
+                "Legitimate",
+                "Phishing"
+            ],
+            random_state=42
+        )
 
     def predict(self, email_text: str) -> dict:
         """
@@ -102,6 +111,105 @@ class PhishingPredictor:
         if phishing_probability >= 0.25:
             return "Low"
         return "Minimal"
+
+    def _lime_predict_proba(self, texts):
+        """
+        Probability function used internally by LIME.
+
+        LIME requires a two-column probability matrix:
+        column 0 -> Legitimate probability
+        column 1 -> Phishing probability
+        """
+        text_list = [
+            str(text)
+            for text in texts
+        ]
+        model_input = tf.constant(
+            text_list,
+            dtype=tf.string
+        )
+        phishing_probabilities = (
+            self.model.predict(
+                model_input,
+                verbose=0
+            )
+            .reshape(-1)
+        )
+        legitimate_probabilities = (
+            1.0 - phishing_probabilities
+        )
+        return np.column_stack([
+            legitimate_probabilities,
+            phishing_probabilities
+        ])
+
+    def explain(
+        self,
+        email_text: str,
+        num_features: int = 8,
+        num_samples: int = 1000
+    ) -> dict:
+        """
+        Generate a local LIME explanation for the
+        phishing-class probability.
+        """
+        if not isinstance(email_text, str):
+            raise TypeError(
+                "email_text must be a string."
+            )
+
+        cleaned_text = email_text.strip()
+        if not cleaned_text:
+            raise ValueError(
+                "Email text cannot be empty."
+            )
+
+        prediction_result = self.predict(cleaned_text)
+        explanation = (
+            self.explainer.explain_instance(
+                cleaned_text,
+                self._lime_predict_proba,
+                labels=[1],
+                num_features=num_features,
+                num_samples=num_samples
+            )
+        )
+
+        features = []
+        for feature, weight in explanation.as_list(label=1):
+            weight = float(weight)
+            if weight > 0:
+                direction = "Supports phishing"
+            elif weight < 0:
+                direction = "Supports legitimate"
+            else:
+                direction = "Neutral"
+            features.append({
+                "feature": str(feature),
+                "weight": weight,
+                "absolute_weight": abs(weight),
+                "direction": direction
+            })
+
+        return {
+            "model": prediction_result["model"],
+            "prediction": prediction_result["prediction"],
+            "predicted_class": prediction_result["predicted_class"],
+            "phishing_probability": prediction_result[
+                "phishing_probability"
+            ],
+            "legitimate_probability": prediction_result[
+                "legitimate_probability"
+            ],
+            "confidence": prediction_result["confidence"],
+            "risk_level": prediction_result["risk_level"],
+            "threshold": prediction_result["threshold"],
+            "method": "LIME",
+            "target_class": "Phishing",
+            "num_features": int(num_features),
+            "num_samples": int(num_samples),
+            "features": features
+        }
 
     def model_info(self) -> dict:
         return {
