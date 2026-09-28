@@ -90,3 +90,39 @@ http://127.0.0.1:8000/docs
 ```
 
 The API returns the predicted class, phishing probability, confidence, risk level and frozen classification threshold.
+
+## Desktop Application
+
+The project includes a Tkinter desktop application that communicates with
+the FastAPI prediction service.
+
+### Start the API
+
+```powershell
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+```
+
+### Start the Desktop Application
+
+Open another terminal:
+
+```powershell
+python desktop_app/app.py
+```
+
+### Desktop Features
+
+- Raw email text input
+- Phishing and legitimate demonstration samples
+- FastAPI connectivity monitoring
+- AI phishing classification
+- Phishing probability
+- Legitimate probability
+- Prediction confidence
+- Risk-level display
+- Frozen model threshold display
+- Visual phishing-risk meter
+- User-friendly API error handling
+
+The desktop interface communicates with the `/predict` API endpoint and
+does not load or retrain the machine learning model directly.
