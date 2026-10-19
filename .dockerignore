@@ -1,0 +1,14 @@
+# .dockerignore
+# Purpose: keep data, environments and notebooks out of the Docker build context.
+# Author: Colile Sibanda
+.git
+.venv
+data
+notebooks
+docs
+tests
+theory
+models/baseline
+**/__pycache__
+.env
+*.bat
