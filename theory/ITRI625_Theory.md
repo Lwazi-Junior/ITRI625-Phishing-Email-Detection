@@ -6,9 +6,7 @@
 
 **Module:** ITRI625
 
-**Student name:** Lwazi Nhlapo
-
-**Student number:**
+**Group members:** Lwazi Nhlapo and Colile Sibanda
 
 **GitHub Repository:**
 https://github.com/Lwazi-Junior/ITRI625-Phishing-Email-Detection
@@ -470,6 +468,8 @@ The results indicate that the model can distinguish phishing from legitimate ema
 
 However, these results should not be interpreted as proof that the system would achieve identical performance on all real-world email traffic. The dataset may contain patterns that differ from future phishing campaigns, organisations or user populations. Changes in attacker behaviour, vocabulary and phishing techniques may reduce performance when the data distribution changes.
 
+Two properties of the data also limit how far these numbers generalise. First, de-duplication removed exact duplicate rows only (408 of 82,486). The pooled collections contain many near-identical emails, such as the same campaign with a different name or date, and the random split can place one copy in training and another in testing, which makes the test easier than genuinely new email. Second, the dataset pools several public collections gathered at different times and places. Bhuiyan and Bhuiyan (2026) showed that on such pooled phishing corpora a linear model can identify which source collection an email came from with 97–98% accuracy, so part of a high score can come from recognising collection-specific markers, such as formatting, mailing-list footers or dates, rather than phishing itself. Grouping near-duplicates before splitting, and testing on a whole collection held out from training, would give a more conservative estimate.
+
 Therefore, PhishGuard AI is best viewed as a high-performing cybersecurity decision-support classifier within the experimental conditions of this project rather than an infallible security mechanism.
 
 ## 3.4 Real-World Use of Machine Learning Models in Cybersecurity
@@ -659,7 +659,41 @@ https://www.kaggle.com/datasets/naserabdullahalam/phishing-email-dataset
 **Source Code and Practical Implementation:**
 https://github.com/Lwazi-Junior/ITRI625-Phishing-Email-Detection
 
+## Appendix A: System Implementation
+
+This appendix describes how the trained model is made usable and safe to run. It supports the practical component and does not change any result above: the model, threshold and test results are the ones produced by the notebook.
+
+### Browser Interface
+
+In addition to the Tkinter desktop application, the FastAPI service serves a browser interface at `/ui/`. The Analyse page sends an email to `/predict` and shows the verdict, the phishing probability against the 0.54 threshold, and the risk level; it then requests a LIME explanation from `/explain` and underlines the influential words in the email itself, red for words that pushed towards phishing and blue for words that pushed towards legitimate (Figure 12). A Model page shows the saved test results and figures, and an About page explains each part of the system in plain language with technical detail behind expandable sections.
+
+![Browser interface showing a phishing verdict and its LIME explanation](../docs/screenshots/01-web-phishing-verdict.png)
+
+**Figure 12:** The browser interface: a phishing verdict, its probability against the threshold, and the LIME words underlined in the email.
+
+### Desktop Application
+
+The desktop application calls the same API over HTTP, so both clients always give the same answer for the same email (Figure 13). It uses a light colour scheme with square, bordered panels, and can be pointed at a hosted copy of the API through the `PHISHGUARD_API_URL` setting.
+
+![Desktop application flagging the phishing example](../docs/screenshots/08-desktop-phishing-verdict.png)
+
+**Figure 13:** The Tkinter desktop application flagging the phishing example as Critical risk.
+
+### Security of the Service
+
+Because the system is a security tool, the service itself is hardened. Every response carries headers that block MIME-type sniffing, framing and referrer leaks, and the browser interface has a Content Security Policy that allows only its own files. Scoring requests are rate-limited per client (30 per minute, and 6 explanations per minute) and across all clients (30 explanations per minute), and at most two explanations run at once, since each LIME explanation scores 1,000 perturbed copies of the email. Requests are validated before they reach the model, and error responses never expose internal details.
+
+### Testing and Ease of Use
+
+An automated test suite of 18 tests loads the saved model and checks the endpoints, input validation, the frozen threshold, the security headers and the rate limiter; all pass (Figure 14). Windows batch files install the requirements (`setup.bat`) and start the API, the browser interface and the desktop application together (`start_all.bat`), and a Dockerfile packages the API, interface and model into one container for hosting.
+
+![The automated test suite passing](../docs/screenshots/11-tests-passing.png)
+
+**Figure 14:** The automated test suite: 18 tests, all passing.
+
 ## References
+
+Bhuiyan, I. and Bhuiyan, T. (2026). The fragility of phishing detection models: Evidence from cross-corpus transfer, prevalence shift, artifact learning, and evasion risk. *Big Data and Cognitive Computing*, 10(7), 211.
 
 Biggio, B. and Roli, F. (2018). Wild patterns: Ten years after the rise of adversarial machine learning. *Pattern Recognition*, 84, pp.317–331. DOI: 10.1016/j.patcog.2018.07.023.
 
