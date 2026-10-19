@@ -12,6 +12,7 @@ if sys.platform == "win32":
         except Exception:
             pass
 
+import os
 import tkinter as tk
 from tkinter import messagebox
 
@@ -21,7 +22,10 @@ import requests
 # ============================================================
 # Configuration
 # ============================================================
-API_BASE_URL = "http://127.0.0.1:8000"
+# Set PHISHGUARD_API_URL to use another server, such as the hosted demo.
+API_BASE_URL = os.environ.get(
+    "PHISHGUARD_API_URL", "http://127.0.0.1:8000"
+).rstrip("/")
 HEALTH_URL = f"{API_BASE_URL}/health"
 PREDICT_URL = f"{API_BASE_URL}/predict"
 EXPLAIN_URL = f"{API_BASE_URL}/explain"
@@ -39,15 +43,21 @@ LEGITIMATE_EXAMPLE = (
     "attached. Regards, Michael."
 )
 
-BG = "#0f172a"
-CARD = "#1e293b"
-TEXT = "#e2e8f0"
-MUTED = "#94a3b8"
-ACCENT = "#38bdf8"
-PHISHING = "#fb7185"
-LEGITIMATE = "#4ade80"
-BUTTON = "#2563eb"
-BUTTON_TEXT = "#f8fafc"
+# Light sky blue page, white cards with a 1px border, square corners.
+# Red and green are kept for the verdict only.
+BG = "#e6f5fd"
+CARD = "#ffffff"
+BORDER = "#a9dcf5"
+INPUT_BG = "#f7fcff"
+TEXT = "#1f2430"
+MUTED = "#5f6776"
+ACCENT = "#0277bd"
+ACCENT_ACTIVE = "#01579b"
+PHISHING = "#c62828"
+LEGITIMATE = "#2e7d32"
+WARNING = "#b06000"
+BUTTON = "#0288d1"
+BUTTON_TEXT = "#ffffff"
 
 
 # ============================================================
@@ -126,7 +136,9 @@ class PhishGuardApp(tk.Tk):
         body = tk.Frame(self, bg=BG)
         body.pack(fill="both", expand=True, padx=24, pady=8)
 
-        input_card = tk.Frame(body, bg=CARD)
+        input_card = tk.Frame(
+            body, bg=CARD, highlightthickness=1, highlightbackground=BORDER
+        )
         input_card.pack(side="left", fill="both", expand=True, padx=(0, 12))
 
         tk.Label(
@@ -140,10 +152,13 @@ class PhishGuardApp(tk.Tk):
         self.email_box = tk.Text(
             input_card,
             wrap="word",
-            bg="#020617",
+            bg=INPUT_BG,
             fg=TEXT,
             insertbackground=TEXT,
             relief="flat",
+            highlightthickness=1,
+            highlightbackground=BORDER,
+            highlightcolor=ACCENT,
             font=("Segoe UI", 11),
             padx=12,
             pady=12
@@ -167,7 +182,7 @@ class PhishGuardApp(tk.Tk):
             buttons,
             "ANALYSE EMAIL",
             self.analyse_email,
-            bg="#0284c7"
+            bg=ACCENT
         )
         self.analyse_button.pack(side="right")
 
@@ -176,7 +191,10 @@ class PhishGuardApp(tk.Tk):
         )
         self.refresh_button.pack(side="right", padx=(0, 8))
 
-        result_card = tk.Frame(body, bg=CARD, width=460)
+        result_card = tk.Frame(
+            body, bg=CARD, width=460,
+            highlightthickness=1, highlightbackground=BORDER
+        )
         result_card.pack(side="right", fill="y", padx=(12, 0))
         result_card.pack_propagate(False)
 
@@ -241,8 +259,9 @@ class PhishGuardApp(tk.Tk):
         self.meter = tk.Canvas(
             result_card,
             height=28,
-            bg="#020617",
-            highlightthickness=0
+            bg=INPUT_BG,
+            highlightthickness=1,
+            highlightbackground=BORDER
         )
         self.meter.pack(fill="x", padx=16, pady=(0, 8))
         self.meter_fill = self.meter.create_rectangle(
@@ -262,7 +281,7 @@ class PhishGuardApp(tk.Tk):
             result_card,
             textvariable=self.message_var,
             bg=CARD,
-            fg="#fbbf24",
+            fg=WARNING,
             font=("Segoe UI", 10),
             wraplength=380,
             justify="left"
@@ -272,7 +291,7 @@ class PhishGuardApp(tk.Tk):
             result_card,
             "EXPLAIN PREDICTION",
             self.start_explanation,
-            bg="#334155"
+            bg=ACCENT
         )
         self.explain_button.pack(fill="x", padx=16, pady=(8, 16))
         self.explain_button.configure(state="disabled")
@@ -284,7 +303,7 @@ class PhishGuardApp(tk.Tk):
             command=command,
             bg=bg,
             fg=BUTTON_TEXT,
-            activebackground="#1d4ed8",
+            activebackground=ACCENT_ACTIVE,
             activeforeground=BUTTON_TEXT,
             relief="flat",
             font=("Segoe UI", 10, "bold"),
@@ -467,7 +486,7 @@ class PhishGuardApp(tk.Tk):
         if probability >= 0.75:
             colour = PHISHING
         elif probability >= 0.54:
-            colour = "#fbbf24"
+            colour = WARNING
         else:
             colour = LEGITIMATE
         self.meter.coords(
@@ -547,7 +566,9 @@ class PhishGuardApp(tk.Tk):
         popup.configure(bg=BG)
         self.explanation_window = popup
 
-        container = tk.Frame(popup, bg=CARD)
+        container = tk.Frame(
+            popup, bg=CARD, highlightthickness=1, highlightbackground=BORDER
+        )
         container.pack(fill="both", expand=True, padx=15, pady=15)
 
         tk.Label(
