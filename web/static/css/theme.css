@@ -1166,7 +1166,7 @@ fieldset legend {
 
 .chart-figure img {
   display: block;
-  max-width: 100%;
+  max-width: min(100%, 760px);
   height: auto;
   border: 1px solid var(--border-light);
 }
