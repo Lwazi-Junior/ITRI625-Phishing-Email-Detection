@@ -1,7 +1,19 @@
+import csv
+import json
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from api.predictor import predictor
+from api.security import install_security
+
+# The browser UI: static files only, no model logic.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+WEB_DIR = PROJECT_ROOT / "web"
+FIGURES_DIR = PROJECT_ROOT / "outputs" / "figures"
+METRICS_DIR = PROJECT_ROOT / "outputs" / "metrics"
 
 
 # ---------------------------------------------------------
@@ -15,6 +27,11 @@ app = FastAPI(
     ),
     version="1.0.0"
 )
+explain_slots = install_security(app)
+if WEB_DIR.is_dir():
+    app.mount("/ui", StaticFiles(directory=WEB_DIR, html=True), name="web")
+if FIGURES_DIR.is_dir():
+    app.mount("/figures", StaticFiles(directory=FIGURES_DIR), name="figures")
 
 
 # ---------------------------------------------------------
@@ -112,6 +129,37 @@ def model_info():
     return predictor.model_info()
 
 
+@app.get("/metrics")
+def metrics():
+    """
+    Return the saved final test results, computed once in the notebook.
+
+    Inputs: none.
+    Output: the final evaluation metadata and the CNN against baseline table.
+    Raises: 503 naming the missing file if the notebook outputs are absent.
+    """
+    metadata_path = METRICS_DIR / "final_evaluation_metadata.json"
+    table_path = METRICS_DIR / "final_test_metrics.csv"
+    for path in (metadata_path, table_path):
+        if not path.exists():
+            raise HTTPException(
+                status_code=503,
+                detail=f"Metrics file missing: outputs/metrics/{path.name}."
+            )
+    with metadata_path.open("r", encoding="utf-8") as handle:
+        metadata = json.load(handle)
+    with table_path.open("r", encoding="utf-8", newline="") as handle:
+        comparison = [
+            {
+                "metric": row["Metric"],
+                "logistic_regression": float(row["Logistic Regression"]),
+                "cnn": float(row["1D CNN"])
+            }
+            for row in csv.DictReader(handle)
+        ]
+    return {"final_test": metadata, "comparison": comparison}
+
+
 @app.post("/predict", response_model=PredictionResponse)
 def predict_email(request: EmailRequest):
     try:
@@ -128,6 +176,16 @@ def predict_email(request: EmailRequest):
     response_model=ExplanationResponse
 )
 def explain_email(request: ExplanationRequest):
+    # LIME scores hundreds of variations of the email, so only a few
+    # explanations may run at once; the rest are told to retry.
+    if not explain_slots.acquire(blocking=False):
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "The server is already running the maximum number of "
+                "explanations. Try again in a few seconds."
+            )
+        )
     try:
         return predictor.explain(
             email_text=request.email_text,
@@ -140,10 +198,10 @@ def explain_email(request: ExplanationRequest):
             detail=str(error)
         ) from error
     except Exception as error:
+        # The cause stays in the server log; the client gets no internals.
         raise HTTPException(
             status_code=500,
-            detail=(
-                "Explanation failed: "
-                f"{str(error)}"
-            )
+            detail="Explanation failed."
         ) from error
+    finally:
+        explain_slots.release()
