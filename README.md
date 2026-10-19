@@ -6,6 +6,24 @@ ITRI625 Machine Learning Project
 PhishGuard AI is an end-to-end cybersecurity machine learning system that
 classifies email messages as legitimate or phishing.
 
+Authors: Lwazi Nhlapo and Colile Sibanda (ITRI625, North-West University, 2026).
+
+## Quick start (Windows)
+
+| Script | What it does |
+|---|---|
+| `setup.bat` | Creates `.venv` and installs `requirements.txt` (run once) |
+| `start_all.bat` | Starts the API, waits for the model to load, then opens the browser UI and the desktop app |
+| `start_api.bat` | Starts only the API on http://127.0.0.1:8000 |
+| `start_web.bat` | Opens the browser UI at http://127.0.0.1:8000/ui/ |
+| `start_desktop.bat` | Opens the Tkinter desktop app |
+| `run_tests.bat` | Runs the test suite |
+| `open_notebook.bat` | Opens the experiment notebook in Jupyter |
+
+The scripts set `PYTHONUTF8=1`. The saved model's vocabulary is UTF-8 and
+Windows Python would otherwise read it with the legacy code page and fail to
+load the model. Set it yourself when running the commands below by hand.
+
 The project includes:
 
 - Phishing email dataset preparation
@@ -18,6 +36,10 @@ The project includes:
 - FastAPI REST API
 - Tkinter desktop application
 - LIME Explainable AI
+- Browser UI served by the API, with an About page explaining every part
+- Security layer: security headers, rate limits, a cap on concurrent explanations
+- Automated tests for the endpoints, validation and security layer
+- Docker image and Render blueprint for hosting
 
 ## Dataset
 
@@ -40,7 +62,11 @@ Labels used by the project:
 ## Project Structure
 
 ```text
-api/                  FastAPI service and frozen-model predictor
+api/                  FastAPI service, frozen-model predictor and security layer
+web/                  Browser UI (static HTML, CSS and JavaScript) served at /ui/
+tests/                Endpoint, validation and security tests
+deploy/               Dockerfile and pinned serving requirements
+docs/screenshots/     Screenshots of the running system
 data/raw/             Local raw CSV (not committed)
 data/processed/       Local train, validation and test CSV files (not committed)
 desktop_app/          Tkinter client
@@ -76,6 +102,17 @@ Interactive documentation:
 
 http://127.0.0.1:8000/docs
 
+## Browser UI
+
+With the API running, open http://127.0.0.1:8000/ui/ (or run `start_web.bat`).
+
+- **Analyse**: paste an email, get the verdict, the probability against the
+  threshold, and the LIME words underlined in the text.
+- **Model**: the saved test results for the CNN and the baseline, the loss
+  curve and the evaluation figures.
+- **About**: what the system is and how each part works, with the details
+  behind expandable sections.
+
 ## Running the Desktop App
 
 Start the API first, then open a second terminal:
@@ -85,7 +122,8 @@ python desktop_app/app.py
 ```
 
 The desktop application sends email text to the API. It does not load or
-retrain the machine learning model.
+retrain the machine learning model. To use a hosted copy of the API instead of
+the local one, set `PHISHGUARD_API_URL` before starting it.
 
 ## API Endpoints
 
@@ -94,6 +132,8 @@ retrain the machine learning model.
 - `GET /model-info` — model configuration
 - `POST /predict` — phishing classification
 - `POST /explain` — local LIME explanation
+- `GET /metrics` — the saved final test results
+- `GET /ui/` — the browser UI; `GET /figures/...` — the saved evaluation figures
 
 Example prediction request:
 
@@ -146,6 +186,51 @@ After analysing an email in the desktop application, select
 
 LIME explanations are local approximations and should not be interpreted
 as causal explanations of model behaviour.
+
+## Security
+
+`api/security.py` adds, on every response, headers that block MIME sniffing,
+framing and referrer leaks, and a Content Security Policy that lets the UI load
+only its own files. Scoring requests are rate-limited per client and, for
+explanations, across all clients; at most two LIME explanations run at once,
+since each scores 1 000 copies of the email. Error responses carry a short
+message and no internal details. Limits are set with environment variables
+listed at the top of the file.
+
+## Tests
+
+```powershell
+run_tests.bat
+```
+
+or `pytest -q` with `PYTHONUTF8=1` set. The tests load the saved model and
+check the endpoints, input validation, the frozen threshold, the security
+headers and the rate limiter.
+
+## Hosting
+
+`deploy/Dockerfile` builds one container with the API, the browser UI, the
+saved model and the saved results; data and notebooks are left out. On Render,
+create a Blueprint from this repository: `render.yaml` points at the Dockerfile
+and sets the number of trusted proxies for the rate limiter.
+
+To try the image locally:
+
+```powershell
+docker build -f deploy/Dockerfile -t phishguard .
+docker run -p 8000:10000 phishguard
+```
+
+Then open http://127.0.0.1:8000/ui/. TensorFlow needs roughly 400 to 500 MB of memory, which is close to the limit of a free hosting tier.
+
+## Screenshots
+
+`docs/screenshots/` shows the browser UI, the desktop app, the API docs and
+the test run, with a caption for each in its README.
+
+![Browser UI](docs/screenshots/01-web-phishing-verdict.png)
+
+![Desktop app](docs/screenshots/08-desktop-phishing-verdict.png)
 
 ## GitHub / Version Control
 
