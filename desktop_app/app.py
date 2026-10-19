@@ -74,8 +74,8 @@ class PhishGuardApp(tk.Tk):
         self.title(
             "PhishGuard AI - Phishing Email Detection"
         )
-        self.geometry("1180x760")
-        self.minsize(1050, 700)
+        self.geometry("1560x960")
+        self.minsize(1400, 880)
         self.configure(bg=BG)
 
         self.api_online = False
@@ -112,7 +112,7 @@ class PhishGuardApp(tk.Tk):
             text="PhishGuard AI",
             bg=BG,
             fg=TEXT,
-            font=("Segoe UI", 24, "bold")
+            font=("Segoe UI", 36, "bold")
         ).pack(side="left")
 
         tk.Label(
@@ -120,7 +120,7 @@ class PhishGuardApp(tk.Tk):
             text="Phishing Email Detection",
             bg=BG,
             fg=MUTED,
-            font=("Segoe UI", 12)
+            font=("Segoe UI", 18)
         ).pack(side="left", padx=(12, 0), pady=(10, 0))
 
         self.api_status = tk.StringVar(value="Checking API...")
@@ -129,7 +129,7 @@ class PhishGuardApp(tk.Tk):
             textvariable=self.api_status,
             bg=BG,
             fg=MUTED,
-            font=("Segoe UI", 12, "bold")
+            font=("Segoe UI", 18, "bold")
         )
         self.api_status_label.pack(side="right")
 
@@ -146,7 +146,7 @@ class PhishGuardApp(tk.Tk):
             text="Email message",
             bg=CARD,
             fg=TEXT,
-            font=("Segoe UI", 13, "bold")
+            font=("Segoe UI", 20, "bold")
         ).pack(anchor="w", padx=16, pady=(14, 6))
 
         self.email_box = tk.Text(
@@ -159,7 +159,7 @@ class PhishGuardApp(tk.Tk):
             highlightthickness=1,
             highlightbackground=BORDER,
             highlightcolor=ACCENT,
-            font=("Segoe UI", 11),
+            font=("Segoe UI", 17),
             padx=12,
             pady=12
         )
@@ -169,10 +169,10 @@ class PhishGuardApp(tk.Tk):
         buttons.pack(fill="x", padx=16, pady=(0, 16))
 
         self._button(
-            buttons, "Load Phishing Example", self.load_phishing_example
+            buttons, "Phishing Example", self.load_phishing_example
         ).pack(side="left", padx=(0, 8))
         self._button(
-            buttons, "Load Legitimate Example", self.load_legitimate_example
+            buttons, "Legitimate Example", self.load_legitimate_example
         ).pack(side="left", padx=(0, 8))
         self._button(
             buttons, "Clear", self.clear_email
@@ -192,7 +192,7 @@ class PhishGuardApp(tk.Tk):
         self.refresh_button.pack(side="right", padx=(0, 8))
 
         result_card = tk.Frame(
-            body, bg=CARD, width=460,
+            body, bg=CARD, width=620,
             highlightthickness=1, highlightbackground=BORDER
         )
         result_card.pack(side="right", fill="y", padx=(12, 0))
@@ -203,7 +203,7 @@ class PhishGuardApp(tk.Tk):
             text="Analysis result",
             bg=CARD,
             fg=TEXT,
-            font=("Segoe UI", 13, "bold")
+            font=("Segoe UI", 20, "bold")
         ).pack(anchor="w", padx=16, pady=(14, 8))
 
         self.prediction_var = tk.StringVar(value="Waiting for analysis")
@@ -212,8 +212,8 @@ class PhishGuardApp(tk.Tk):
             textvariable=self.prediction_var,
             bg=CARD,
             fg=MUTED,
-            font=("Segoe UI", 18, "bold"),
-            wraplength=380,
+            font=("Segoe UI", 28, "bold"),
+            wraplength=540,
             justify="left"
         )
         self.prediction_label.pack(anchor="w", padx=16, pady=(0, 12))
@@ -235,7 +235,7 @@ class PhishGuardApp(tk.Tk):
                 text=label,
                 bg=CARD,
                 fg=MUTED,
-                font=("Segoe UI", 10),
+                font=("Segoe UI", 16),
                 width=22,
                 anchor="w"
             ).pack(side="left")
@@ -244,7 +244,7 @@ class PhishGuardApp(tk.Tk):
                 textvariable=variable,
                 bg=CARD,
                 fg=TEXT,
-                font=("Segoe UI", 11, "bold"),
+                font=("Segoe UI", 17, "bold"),
                 anchor="w"
             ).pack(side="left", fill="x", expand=True)
 
@@ -253,19 +253,19 @@ class PhishGuardApp(tk.Tk):
             text="Phishing risk meter",
             bg=CARD,
             fg=MUTED,
-            font=("Segoe UI", 10)
+            font=("Segoe UI", 16)
         ).pack(anchor="w", padx=16, pady=(18, 6))
 
         self.meter = tk.Canvas(
             result_card,
-            height=28,
+            height=32,
             bg=INPUT_BG,
             highlightthickness=1,
             highlightbackground=BORDER
         )
         self.meter.pack(fill="x", padx=16, pady=(0, 8))
         self.meter_fill = self.meter.create_rectangle(
-            0, 0, 0, 28, fill=MUTED, width=0
+            0, 0, 0, 32, fill=MUTED, width=0
         )
         self.meter_text = tk.StringVar(value="0%")
         tk.Label(
@@ -273,7 +273,7 @@ class PhishGuardApp(tk.Tk):
             textvariable=self.meter_text,
             bg=CARD,
             fg=MUTED,
-            font=("Segoe UI", 10)
+            font=("Segoe UI", 16)
         ).pack(anchor="w", padx=16)
 
         self.message_var = tk.StringVar(value="")
@@ -282,8 +282,8 @@ class PhishGuardApp(tk.Tk):
             textvariable=self.message_var,
             bg=CARD,
             fg=WARNING,
-            font=("Segoe UI", 10),
-            wraplength=380,
+            font=("Segoe UI", 16),
+            wraplength=540,
             justify="left"
         ).pack(anchor="w", padx=16, pady=(16, 8))
 
@@ -306,7 +306,7 @@ class PhishGuardApp(tk.Tk):
             activebackground=ACCENT_ACTIVE,
             activeforeground=BUTTON_TEXT,
             relief="flat",
-            font=("Segoe UI", 10, "bold"),
+            font=("Segoe UI", 16, "bold"),
             padx=12,
             pady=8,
             cursor="hand2"
@@ -482,7 +482,7 @@ class PhishGuardApp(tk.Tk):
 
     def _update_meter(self, probability):
         probability = max(0.0, min(1.0, float(probability)))
-        width = max(self.meter.winfo_width(), 360)
+        width = max(self.meter.winfo_width(), 440)
         if probability >= 0.75:
             colour = PHISHING
         elif probability >= 0.54:
@@ -494,7 +494,7 @@ class PhishGuardApp(tk.Tk):
             0,
             0,
             width * probability,
-            28
+            32
         )
         self.meter.itemconfigure(self.meter_fill, fill=colour)
         self.meter_text.set(f"{probability * 100:.4f}%")
@@ -561,8 +561,8 @@ class PhishGuardApp(tk.Tk):
 
         popup = tk.Toplevel(self)
         popup.title("PhishGuard AI - LIME Explanation")
-        popup.geometry("780x560")
-        popup.minsize(700, 500)
+        popup.geometry("1100x760")
+        popup.minsize(980, 680)
         popup.configure(bg=BG)
         self.explanation_window = popup
 
@@ -576,7 +576,7 @@ class PhishGuardApp(tk.Tk):
             text="Explainable AI — LIME",
             bg=CARD,
             fg=TEXT,
-            font=("Segoe UI", 16, "bold")
+            font=("Segoe UI", 24, "bold")
         ).pack(anchor="w", padx=20, pady=(16, 4))
 
         tk.Label(
@@ -589,8 +589,8 @@ class PhishGuardApp(tk.Tk):
             ),
             bg=CARD,
             fg=MUTED,
-            font=("Segoe UI", 10),
-            wraplength=700,
+            font=("Segoe UI", 16),
+            wraplength=1020,
             justify="left"
         ).pack(anchor="w", padx=20, pady=(0, 12))
 
@@ -604,7 +604,7 @@ class PhishGuardApp(tk.Tk):
             ),
             bg=CARD,
             fg=TEXT,
-            font=("Segoe UI", 11, "bold")
+            font=("Segoe UI", 17, "bold")
         ).pack(anchor="w", padx=20, pady=(0, 12))
 
         header = tk.Frame(container, bg=CARD)
@@ -619,7 +619,7 @@ class PhishGuardApp(tk.Tk):
                 text=title,
                 bg=CARD,
                 fg=MUTED,
-                font=("Segoe UI", 10, "bold"),
+                font=("Segoe UI", 16, "bold"),
                 width=width,
                 anchor="w"
             ).pack(side="left")
@@ -634,7 +634,7 @@ class PhishGuardApp(tk.Tk):
                 text=row["feature"],
                 bg=CARD,
                 fg=TEXT,
-                font=("Segoe UI", 11),
+                font=("Segoe UI", 17),
                 width=36,
                 anchor="w"
             ).pack(side="left")
@@ -643,7 +643,7 @@ class PhishGuardApp(tk.Tk):
                 text=f"{weight:+.4f}",
                 bg=CARD,
                 fg=colour,
-                font=("Segoe UI", 11, "bold"),
+                font=("Segoe UI", 17, "bold"),
                 width=14,
                 anchor="w"
             ).pack(side="left")
@@ -652,7 +652,7 @@ class PhishGuardApp(tk.Tk):
                 text=row["direction"],
                 bg=CARD,
                 fg=colour,
-                font=("Segoe UI", 11),
+                font=("Segoe UI", 17),
                 width=24,
                 anchor="w"
             ).pack(side="left")
