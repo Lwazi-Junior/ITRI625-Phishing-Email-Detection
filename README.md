@@ -61,6 +61,37 @@ Labels used by the project:
 - `0` — legitimate
 - `1` — phishing
 
+## Re-running the notebook (optional)
+
+You do not need to re-run anything to read the results or to use the system.
+The notebook is saved with every output visible, and the API, browser UI and
+desktop app use the already-trained model in `models/`: no data is needed to
+run them.
+
+To reproduce the experiment from scratch:
+
+1. Download `phishing_email.csv` from the Kaggle link above and place it in
+   `data/raw/`. The notebook stops with a message naming this path if the file
+   is missing. The data is not in this repository because of its size.
+2. Run `setup.bat`, then `open_notebook.bat`, and choose Kernel, then Restart
+   and Run All. Cells run top to bottom; the seed is fixed at 42.
+3. Allow time and memory: training the CNN on the 57,453 training emails takes
+   several minutes on a CPU, and TensorFlow needs a few GB of RAM.
+
+What a re-run changes:
+
+- The notebook rewrites `data/processed/`, the saved models in `models/`,
+  `outputs/figures/` and `outputs/metrics/`, including the frozen threshold in
+  `models/deep_learning/decision_config.json`.
+- Results can differ slightly from the saved ones, because TensorFlow is not
+  bit-for-bit repeatable across machines and versions. The README and
+  documentation quote the saved run.
+- The test set is scored once, in the final evaluation section. Re-running that
+  section after changing the model or threshold would turn the test set into
+  a tuning set, so change nothing before it.
+- To keep the original results, copy `models/` and `outputs/` somewhere safe
+  before re-running, or work on a fresh clone.
+
 ## Project Structure
 
 ```text
