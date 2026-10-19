@@ -84,6 +84,12 @@ def test_metrics_serves_the_saved_test_results(client):
     assert {row["metric"] for row in body["comparison"]} >= {"Accuracy", "F1-score", "ROC-AUC"}
 
 
+def test_root_redirects_to_the_browser_ui(client):
+    response = client.get("/", follow_redirects=False)
+    assert response.status_code in (302, 307)
+    assert response.headers["location"] == "/ui/"
+
+
 def test_browser_ui_and_figures_are_served(client):
     assert client.get("/ui/").status_code == 200
     assert client.get("/ui/about.html").status_code == 200

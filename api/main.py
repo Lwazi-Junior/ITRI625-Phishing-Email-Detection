@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -103,8 +104,11 @@ class ExplanationResponse(BaseModel):
     features: list[ExplanationFeature]
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 def root():
+    # A visitor at the site root lands on the browser UI when it is present.
+    if WEB_DIR.is_dir():
+        return RedirectResponse(url="/ui/")
     return {
         "application": "PhishGuard AI",
         "status": "online",
