@@ -1,0 +1,158 @@
+<!-- about.html - About page: what PhishGuard AI is, then expandable sections
+     on how every part works and connects. Author: Colile Sibanda -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>About - PhishGuard AI</title>
+  <link rel="stylesheet" href="static/css/theme.css">
+</head>
+<body>
+  <header class="app-bar">
+    <span class="app-name">PhishGuard AI</span>
+    <span class="breadcrumb">About</span>
+  </header>
+
+  <div class="shell">
+    <nav class="nav-rail">
+      <button class="nav-toggle" type="button" aria-label="Toggle navigation">Menu</button>
+      <ul>
+        <li><a href="index.html">Analyse</a></li>
+        <li><a href="model.html">Model</a></li>
+        <li class="nav-divider"><span>Help</span></li>
+        <li><a href="about.html" class="active">About</a></li>
+      </ul>
+    </nav>
+
+    <main class="content">
+      <div class="card">
+        <div class="card-head">
+          <p class="card-title">About PhishGuard AI</p>
+          <span id="pulse" class="pulse idle">API: checking...</span>
+        </div>
+        <p class="prose">
+          PhishGuard AI reads the text of an email and says whether it looks
+          like phishing, how likely that is, and which words pushed it to that
+          answer. It is meant to help a person sort reported emails quickly: it
+          ranks and explains, and a person still decides. It does not look at
+          attachments, sender addresses or the links themselves.
+        </p>
+        <p class="prose">
+          It was built for the ITRI625 Machine Learning project at North-West
+          University (2026) by Lwazi Nhlapo and Colile Sibanda. The sections
+          below go from a short overview to the full technical detail.
+        </p>
+        <dl class="detail-list" id="live-facts">
+          <dt>Model served now</dt><dd id="fact-model">loading...</dd>
+          <dt>Decision threshold</dt><dd id="fact-threshold">loading...</dd>
+          <dt>Layers</dt><dd id="fact-layers">loading...</dd>
+          <dt>Source code</dt><dd><a href="https://github.com/Lwazi-Junior/ITRI625-Phishing-Email-Detection">github.com/Lwazi-Junior/ITRI625-Phishing-Email-Detection</a></dd>
+        </dl>
+        <div id="page-banner"></div>
+      </div>
+
+      <div class="card">
+        <p class="card-title">How the parts connect</p>
+        <p class="card-body">
+          One trained model, one API in front of it, and two ways to use it.
+          Both clients get the same answer because both call the same API.
+        </p>
+        <ol class="guide-steps">
+          <li><strong>Data</strong> (offline): the public Kaggle phishing email dataset (about 82 000 emails) is cleaned, exact duplicates are removed, and it is split 70/15/15 into training, validation and test sets.</li>
+          <li><strong>Training and evaluation</strong> (offline, in the Jupyter notebook): a TF-IDF and logistic regression baseline and a 1D convolutional network are trained; the network uses early stopping; the decision threshold is chosen on validation data; the test set is scored once at the end.</li>
+          <li><strong>The API</strong> (FastAPI): loads the saved network once at start-up and answers <code>/predict</code>, <code>/explain</code>, <code>/health</code>, <code>/model-info</code> and <code>/metrics</code>.</li>
+          <li><strong>The clients</strong>: this browser UI and the Tkinter desktop app both call the API over HTTP.</li>
+          <li><strong>Hosting</strong>: the Dockerfile runs the API and this UI in one container, so the same build runs locally or on a cloud host.</li>
+        </ol>
+
+        <details class="explainer">
+          <summary>What happens when you click Analyse email</summary>
+          <div class="explainer-body">
+            <ol class="plain-list">
+              <li>The page sends your text to <code>POST /predict</code> and shows the verdict as soon as it returns, then sends it to <code>POST /explain</code> for the word weights.</li>
+              <li>The security layer checks the request rate for your address and, for explanations, the rate across all users. Over the limit the answer is HTTP 429 with a Retry-After header.</li>
+              <li>The request schema rejects empty text and text over 200 000 characters with HTTP 422, naming the <code>email_text</code> field.</li>
+              <li>Inside the model, a TextVectorization layer splits the text on spaces and maps each word to its index in a 30 000-word vocabulary learned from the training set, cut or padded to 300 words.</li>
+              <li>The network returns one number: the probability that the email is phishing. At or above 0.54 the verdict is phishing.</li>
+              <li>For the explanation, LIME builds 1 000 copies of the email with words removed at random, scores them all, and fits a small linear model; its weights are the influence of each word.</li>
+              <li>The page underlines those words in your text and lists them with their weights.</li>
+            </ol>
+          </div>
+        </details>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Technical details</p>
+        <p class="card-body">One section per part of the system. Each says what it does, why it is built that way, and where the code is.</p>
+
+        <details class="explainer">
+          <summary>Data and splits</summary>
+          <div class="explainer-body">
+            <p>The dataset is the Kaggle Phishing Email Dataset (naserabdullahalam/phishing-email-dataset), a pool of public collections with each email labelled 1 for phishing and 0 for legitimate. Exact duplicate rows are removed (408 of 82 486), then the data is split with a fixed seed (42) and stratified by label into 57 453 training, 12 312 validation and 12 312 test emails, so each set keeps the same share of phishing.</p>
+            <p>The raw and processed CSV files are not in the repository because of their size; the notebook rebuilds the splits from <code>data/raw/phishing_email.csv</code>. Code: <code>notebooks/phishing_detection.ipynb</code>.</p>
+          </div>
+        </details>
+
+        <details class="explainer">
+          <summary>The model: a 1D convolutional network</summary>
+          <div class="explainer-body">
+            <p>Layers, in order: TextVectorization (30 000 words, 300 per email), Embedding (64 dimensions per word), SpatialDropout1D (0.2), Conv1D (128 filters of width 5, ReLU), GlobalMaxPooling1D, Dense (128, ReLU), BatchNormalization, Dropout (0.3), Dense (64, ReLU), Dropout (0.3), and a single sigmoid output.</p>
+            <p>Why this shape: a filter of width 5 learns short phrases such as "verify your account", and global max pooling keeps the strongest match wherever it appears in the email, which suits phishing cues that can sit anywhere in the text. Dropout and early stopping limit overfitting.</p>
+            <p>Training: Adam (learning rate 0.001), binary cross-entropy, batches of 256, at most 20 epochs. Early stopping watches validation loss with a patience of 3 and restores the best weights; the learning rate halves when validation loss stalls for 2 epochs. Accuracy, precision, recall, F1, ROC-AUC, PR-AUC and loss are logged every epoch to <code>outputs/metrics/deep_learning_training_log.csv</code>.</p>
+            <p>The baseline is TF-IDF (single words and pairs, 50 000 features) with logistic regression, scored on the same splits for comparison.</p>
+          </div>
+        </details>
+
+        <details class="explainer">
+          <summary>Threshold and evaluation</summary>
+          <div class="explainer-body">
+            <p>The cut-off between phishing and legitimate (0.54) was chosen by F1-score on the validation set and frozen in <code>models/deep_learning/decision_config.json</code> before the test set was used. The test set was scored once with that frozen model and threshold; the results are in <code>outputs/metrics/</code> and on the Model page.</p>
+          </div>
+        </details>
+
+        <details class="explainer">
+          <summary>Explanations (LIME)</summary>
+          <div class="explainer-body">
+            <p>LIME (Local Interpretable Model-agnostic Explanations) treats the network as a black box. It perturbs one email by removing words, scores every copy, and fits a weighted linear model to those scores. A positive weight means the word pushed the probability towards phishing. It explains one prediction locally and is not proof of what the model learned overall. Code: <code>api/predictor.py</code>.</p>
+          </div>
+        </details>
+
+        <details class="explainer">
+          <summary>The API</summary>
+          <div class="explainer-body">
+            <p>FastAPI, in <code>api/main.py</code>. The model and threshold load once when the process starts, not per request. Endpoints: <code>GET /health</code>, <code>GET /model-info</code>, <code>GET /metrics</code>, <code>POST /predict</code>, <code>POST /explain</code>. Interactive documentation is at <code>/docs</code>. This UI is served from <code>web/</code> at <code>/ui/</code>.</p>
+          </div>
+        </details>
+
+        <details class="explainer">
+          <summary>Security</summary>
+          <div class="explainer-body">
+            <p>Code: <code>api/security.py</code>. Every response carries security headers (no MIME sniffing, no framing, no referrer). This UI gets a Content Security Policy that allows only its own files: no third-party script, style or font. Scoring requests are limited per client (30 a minute, 6 explanations a minute) and across all users (30 explanations a minute), and at most 2 explanations run at once, because each one scores 1 000 copies of the email. Errors return a short message and never internal details.</p>
+          </div>
+        </details>
+
+        <details class="explainer">
+          <summary>Desktop app</summary>
+          <div class="explainer-body">
+            <p>Tkinter, in <code>desktop_app/app.py</code>. It calls the same API over HTTP on a background thread so the window never freezes. Set <code>PHISHGUARD_API_URL</code> to point it at a hosted copy instead of the local one.</p>
+          </div>
+        </details>
+
+        <details class="explainer">
+          <summary>Testing and running it</summary>
+          <div class="explainer-body">
+            <p>Tests in <code>tests/</code> check the endpoints, the input validation, the security headers, the rate limits and the threshold logic: run <code>run_tests.bat</code> or <code>pytest -q</code>. To run everything on Windows: <code>setup.bat</code> once, then <code>start_all.bat</code>.</p>
+          </div>
+        </details>
+      </div>
+    </main>
+  </div>
+
+  <script src="static/js/common.js"></script>
+  <script src="static/js/charts.js"></script>
+  <script src="static/js/health.js"></script>
+  <script src="static/js/about.js"></script>
+</body>
+</html>
