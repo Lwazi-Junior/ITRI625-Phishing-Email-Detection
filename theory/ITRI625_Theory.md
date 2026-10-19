@@ -685,11 +685,19 @@ Because the system is a security tool, the service itself is hardened. Every res
 
 ### Testing and Ease of Use
 
-An automated test suite of 18 tests loads the saved model and checks the endpoints, input validation, the frozen threshold, the security headers and the rate limiter; all pass (Figure 14). Windows batch files install the requirements (`setup.bat`) and start the API, the browser interface and the desktop application together (`start_all.bat`), and a Dockerfile packages the API, interface and model into one container for hosting.
+An automated test suite of 19 tests loads the saved model and checks the endpoints, input validation, the frozen threshold, the security headers and the rate limiter; all pass (Figure 14). Windows batch files install the requirements (`setup.bat`) and start the API, the browser interface and the desktop application together (`start_all.bat`), and a Dockerfile packages the API, interface and model into one container for hosting.
+
+### Live Demonstration
+
+The same container is hosted on Render's free plan at https://phishguard-b.onrender.com/ui/, with the API documentation at https://phishguard-b.onrender.com/docs (Figure 15). The first request after a period of inactivity takes about a minute while the free host wakes. Checked live, the pages answer with their security headers, a prediction returns in under a second, a LIME explanation takes about five seconds, and a burst of 40 requests is rate-limited (12 refused), including when a client forges its forwarded address.
+
+![The hosted demonstration analysing the phishing example](../docs/screenshots/12-live-demo-verdict.png)
+
+**Figure 15:** The hosted demonstration analysing the phishing example, with its LIME explanation.
 
 ![The automated test suite passing](../docs/screenshots/11-tests-passing.png)
 
-**Figure 14:** The automated test suite: 18 tests, all passing.
+**Figure 14:** The automated test suite: 19 tests, all passing.
 
 ## References
 

@@ -2,7 +2,7 @@
 
 Captured from the running system: the API started with `start_api.bat`, the
 browser UI in a headless browser, the desktop app driven against the same API,
-and the test suite run with `run_tests.bat`. The training and evaluation
+the test suite run with `run_tests.bat`, and the hosted demo. The training and evaluation
 figures themselves are in `outputs/figures/` and inside the notebook.
 
 | File | What it shows |
@@ -17,4 +17,6 @@ figures themselves are in `outputs/figures/` and inside the notebook.
 | `08-desktop-phishing-verdict.png` | Desktop app: the phishing example flagged as Critical risk |
 | `09-desktop-lime-explanation.png` | Desktop app: the LIME explanation window for that email |
 | `10-desktop-legitimate-verdict.png` | Desktop app: the meeting email passed as legitimate |
-| `11-tests-passing.png` | The test suite: 18 tests on the endpoints, validation, threshold logic and security layer, all passing |
+| `11-tests-passing.png` | The test suite: 19 tests on the endpoints, validation, threshold logic and security layer, all passing |
+| `12-live-demo-verdict.png` | The hosted demo at https://phishguard-b.onrender.com/ui/ analysing the phishing example, with its LIME words |
+| `13-live-api-docs.png` | The hosted API's interactive documentation at https://phishguard-b.onrender.com/docs |
