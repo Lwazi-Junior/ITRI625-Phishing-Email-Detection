@@ -1,0 +1,86 @@
+<!-- model.html - Model page: how well the served model did on the held-out
+     test set, and the training and evaluation figures. Author: Colile Sibanda -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Model - PhishGuard AI</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="static/css/theme.css">
+</head>
+<body>
+  <header class="app-bar">
+    <span class="app-name">PhishGuard AI</span>
+    <span class="breadcrumb">Model</span>
+  </header>
+
+  <div class="shell">
+    <nav class="nav-rail">
+      <button class="nav-toggle" type="button" aria-label="Toggle navigation">Menu</button>
+      <ul>
+        <li><a href="index.html">Analyse</a></li>
+        <li><a href="model.html" class="active">Model</a></li>
+        <li class="nav-divider"><span>Help</span></li>
+        <li><a href="about.html">About</a></li>
+      </ul>
+    </nav>
+
+    <main class="content">
+      <div class="card">
+        <div class="card-head">
+          <p class="card-title">How well it works on unseen emails</p>
+          <span id="pulse" class="pulse idle">API: checking...</span>
+        </div>
+        <p class="card-body">
+          These results come from the test set: emails the model never saw
+          while it was trained or tuned, scored once at the end. The logistic
+          regression baseline is shown beside the CNN for comparison.
+        </p>
+        <div id="summary"></div>
+        <div id="comparison"></div>
+        <div id="page-banner"></div>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Training</p>
+        <p class="card-body">
+          Loss per epoch on the training and validation sets. Lower is better.
+          Training stopped early once validation loss stopped improving, and the
+          weights from the best epoch were kept.
+        </p>
+        <figure class="chart-figure">
+          <img src="/figures/cnn_training_validation_loss.png" alt="Training and validation loss per epoch">
+          <figcaption>Look at the validation line: it flattens after a few epochs, which is where early stopping took over.</figcaption>
+        </figure>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Test set evaluation</p>
+        <p class="card-body">
+          The curves show the trade-off between catching phishing and raising
+          false alarms; the confusion matrix counts every right and wrong answer
+          at the chosen threshold.
+        </p>
+        <figure class="chart-figure">
+          <img src="/figures/final_test_confusion_matrix.png" alt="Confusion matrix on the test set">
+          <figcaption>Confusion matrix: the two off-diagonal cells are the false alarms and the missed phishing emails.</figcaption>
+        </figure>
+        <figure class="chart-figure">
+          <img src="/figures/final_test_roc_curve.png" alt="ROC curve on the test set">
+          <figcaption>ROC curve: closer to the top-left corner is better.</figcaption>
+        </figure>
+        <figure class="chart-figure">
+          <img src="/figures/final_test_precision_recall_curve.png" alt="Precision-recall curve on the test set">
+          <figcaption>Precision-recall curve: closer to the top-right corner is better.</figcaption>
+        </figure>
+      </div>
+    </main>
+  </div>
+
+  <script src="static/js/common.js"></script>
+  <script src="static/js/charts.js"></script>
+  <script src="static/js/health.js"></script>
+  <script src="static/js/model.js"></script>
+</body>
+</html>
