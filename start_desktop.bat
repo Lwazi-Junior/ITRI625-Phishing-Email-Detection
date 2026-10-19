@@ -8,4 +8,4 @@ if not exist ".venv\Scripts\python.exe" (
     pause
     exit /b 1
 )
-start "" "%~dp0.venv\Scripts\pythonw.exe" "%~dp0desktop_apppp.py"
+start "" "%~dp0.venv\Scripts\pythonw.exe" "%~dp0desktop_app\app.py"
