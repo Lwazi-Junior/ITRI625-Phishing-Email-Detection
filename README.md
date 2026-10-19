@@ -8,6 +8,8 @@ classifies email messages as legitimate or phishing.
 
 Authors: Lwazi Nhlapo and Colile Sibanda (ITRI625, North-West University, 2026).
 
+Live demo: https://phishguard-b.onrender.com/ui/ (browser UI) and https://phishguard-b.onrender.com/docs (API documentation). The free host sleeps when idle, so the first request after a pause takes about a minute.
+
 ## Quick start (Windows)
 
 | Script | What it does |
@@ -212,9 +214,11 @@ headers and the rate limiter.
 `deploy/Dockerfile` builds one container with the API, the browser UI, the
 saved model and the saved results; data and notebooks are left out. On Render,
 create a Blueprint from this repository: `render.yaml` points at the Dockerfile
-and sets the number of trusted proxies for the rate limiter.
+and sets the number of trusted proxies for the rate limiter. The live demo above
+runs the `B` branch this way on the free plan: the image starts within a minute
+and a LIME explanation takes about 5 seconds.
 
-To try the image locally:
+The Dockerfile was built and run by Render for the live demo. To try the image locally:
 
 ```powershell
 docker build -f deploy/Dockerfile -t phishguard .
